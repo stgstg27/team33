@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Jan 21 06:10:19 2018
+
+@author: Saurabh
+"""
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from math import hypot
+
+#p1 = [0,0]
+#p2 = [0,0]
+#p3 = [0,0]
+#p4 = [0,0]
+
+
+    
+img = cv2.imread('figure.jpg',0)
+cv2.namedWindow('orig_image',cv2.WINDOW_NORMAL)
+cv2.imshow('orig_image',img)
+cv2.resizeWindow('orig_image',200,200)
+
+eq_hist = cv2.equalizeHist(img)
+res = np.hstack((img,eq_hist))
+cv2.namedWindow('eq_hist',cv2.WINDOW_NORMAL)
+cv2.imshow('eq_hist',eq_hist)
+cv2.resizeWindow('eq_hist',200,200)
+
+th3 = cv2.adaptiveThreshold(eq_hist,255,cv2.ADAPTIVE_THRESH_MEAN_C,\
+            cv2.THRESH_BINARY_INV,11,2)
+
+contours, hierarchy = cv2.findContours(th3,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+black = np.zeros((len(img),len(img[0])),np.uint8)
+print len(black),len(black[0])
+
+
+
+
+#black = cv2.drawContours(black, contours, 0, (0,255,0), 3)
+
+
+
+cv2.namedWindow('frame',cv2.WINDOW_NORMAL)
+cv2.imshow('frame',eq_hist)
+cv2.resizeWindow('frame',200,200)
+
+kernel = np.ones((11,11),np.uint8)
+erosion = cv2.erode(eq_hist,kernel,iterations = 1)
+cv2.namedWindow('erosion',cv2.WINDOW_NORMAL)
+cv2.imshow('erosion',erosion)
+cv2.resizeWindow('erosion',200,200)
+
+opening = cv2.morphologyEx(erosion, cv2.MORPH_OPEN, kernel)
+cv2.namedWindow('opening',cv2.WINDOW_NORMAL)
+cv2.imshow('opening',opening)
+cv2.resizeWindow('opening',200,200)
+
+tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
+cv2.namedWindow('tophat',cv2.WINDOW_NORMAL)
+cv2.imshow('tophat',tophat)
+cv2.resizeWindow('tophat',200,200)
+
+eq_hist_top = cv2.equalizeHist(tophat)
+res = np.hstack((img,eq_hist))
+cv2.namedWindow('eq_hist_top',cv2.WINDOW_NORMAL)
+cv2.imshow('eq_hist_top',eq_hist_top)
+cv2.resizeWindow('eq_hist_top',200,200)
+
+ret,thresh1 = cv2.threshold(eq_hist_top,127,255,cv2.THRESH_BINARY)
+ret,thresh2 = cv2.threshold(eq_hist_top,127,255,cv2.THRESH_BINARY_INV)
+ret,thresh3 = cv2.threshold(eq_hist_top,127,255,cv2.THRESH_TRUNC)
+ret,thresh4 = cv2.threshold(eq_hist_top,127,255,cv2.THRESH_TOZERO)
+ret,thresh5 = cv2.threshold(eq_hist_top,200,255,cv2.THRESH_TOZERO_INV)
+
+cv2.namedWindow('thresh1',cv2.WINDOW_NORMAL)
+cv2.imshow('thresh1',thresh1)
+cv2.resizeWindow('thresh1',200,200)
+
+cv2.namedWindow('thresh2',cv2.WINDOW_NORMAL)
+cv2.imshow('thresh2',thresh2)
+cv2.resizeWindow('thresh2',200,200)
+
+cv2.namedWindow('thresh3',cv2.WINDOW_NORMAL)
+cv2.imshow('thresh3',thresh3)
+cv2.resizeWindow('thresh3',200,200)
+
+
+cv2.namedWindow('thresh4',cv2.WINDOW_NORMAL)
+cv2.imshow('thresh4',thresh4)
+cv2.resizeWindow('thresh4',200,200)
+
+cv2.namedWindow('thresh5',cv2.WINDOW_NORMAL)
+cv2.imshow('thresh5',thresh5)
+cv2.resizeWindow('thresh5',200,200)
+
+
+th3 = cv2.adaptiveThreshold(eq_hist_top,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
+            cv2.THRESH_BINARY_INV,55,2)
+
+th3 = cv2.medianBlur(th3,13)
+
+cv2.namedWindow('black',cv2.WINDOW_NORMAL)
+cv2.imshow('black',th3)
+cv2.resizeWindow('black',200,200)
+
+
+tophat1 = cv2.morphologyEx(th3, cv2.MORPH_TOPHAT, kernel)
+cv2.namedWindow('tophat1',cv2.WINDOW_NORMAL)
+cv2.imshow('tophat1',tophat1)
+cv2.resizeWindow('tophat1',200,200)
+
+sobelx = cv2.Sobel(erosion,cv2.CV_64F,1,0,ksize=5)
+sobely = cv2.Sobel(erosion,cv2.CV_64F,0,1,ksize=5)
+cv2.namedWindow('sobelx',cv2.WINDOW_NORMAL)
+cv2.imshow('sobelx',sobelx)
+cv2.resizeWindow('sobelx',200,200)
+
+cv2.namedWindow('sobely',cv2.WINDOW_NORMAL)
+cv2.imshow('sobely',sobelx)
+cv2.resizeWindow('sobely',200,200)
+
+dst = cv2.inpaint(eq_hist_top,tophat,3,cv2.INPAINT_TELEA)
+cv2.namedWindow('dst',cv2.WINDOW_NORMAL)
+cv2.imshow('dst',dst)
+cv2.resizeWindow('dst',200,200)
+
+final_img = cv2.subtract(black,thresh5)
+
+
+canny = cv2.Canny(eq_hist_top,20,50)
+cv2.namedWindow('canny',cv2.WINDOW_NORMAL)
+cv2.imshow('canny',final_img)
+cv2.resizeWindow('canny',200,200)
+
+circles = cv2.HoughCircles(th3,cv2.cv.CV_HOUGH_GRADIENT,1,120,param1=50,param2=50,minRadius=0,maxRadius=0)
+circles = np.uint16(np.around(circles))
+
+x, y, r = circles[0,:][0]
+rows, cols = th3.shape
+
+for i in range(cols):
+    for j in range(rows):
+        if hypot(i-x, j-y) > r:
+            img[j,i] = 0
+
+cv2.imwrite("iris.jpg",img)
+plt.imshow(img, cmap = 'gray', interpolation = 'bicubic')
+
+plt.show()
+
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()

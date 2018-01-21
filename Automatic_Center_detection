@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Jan 21 09:53:36 2018
+
+@author: Saurabh
+"""
+import cv2
+import numpy as np
+
+img = cv2.imread('vibhu.jpg',0)
+img2 = img
+#img = cv2.medianBlur(img,5)
+cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
+circles = cv2.HoughCircles(img,cv2.cv.CV_HOUGH_GRADIENT,1,20,
+                            param1=50,param2=30,minRadius=0,maxRadius=0)
+try:
+    meanx = 0
+    meany = 0
+    number = 0
+    circles = np.uint16(np.around(circles))
+    
+    
+    print meanx
+    for i in circles[0,:]:
+        cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3)
+        #cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),i[2])
+        meanx+=i[0]
+        meany+=i[1]
+        number+=1
+    mx = meanx/number
+    my = meany/number
+    cv2.circle(cimg,(mx,my),50,(255,0,0),5 ,4)
+    cv2.namedWindow('detected_circles',cv2.WINDOW_NORMAL)
+    cv2.imshow('detected_circles',cimg)
+    
+    cv2.namedWindow('orig_image',cv2.WINDOW_NORMAL)
+    cv2.imshow('orig_image',img2)
+
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+        
+except:
+    print "Center cannot be access, Please select manual procedure to detect center"
+    
+    cv2.namedWindow('detected_circles',cv2.WINDOW_NORMAL)
+    cv2.imshow('detected_circles',cimg)
+    
+    cv2.namedWindow('orig_image',cv2.WINDOW_NORMAL)
+    cv2.imshow('orig_image',img2)
+    
+    
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
